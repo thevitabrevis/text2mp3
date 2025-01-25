@@ -4,6 +4,7 @@ import logging
 import pyttsx3
 import os
 import json
+import winsound  # For playing sounds (Windows only)
 
 # Configuration file
 CONFIG_FILE = "tts_config.json"
@@ -13,7 +14,8 @@ DEFAULT_CONFIG = {
     "rate": 200,
     "volume": 1.0,
     "voice_index": 0,
-    "last_directory": os.path.expanduser("~")
+    "last_directory": os.path.expanduser("~"),
+    "input_text": "" #save input text
 }
 
 def load_config():
@@ -68,30 +70,29 @@ def convert_button_clicked():
             raise ValueError("Rate must be positive")
 
         filename_suggestion = input_text[:20].replace(" ", "_") + ".mp3"
-        
-        if config.get("last_directory"): # Check if a last directory is set
+
+        if config.get("last_directory"):
             file_path = os.path.join(config["last_directory"], filename_suggestion)
-            if os.path.exists(config["last_directory"]): #check if the directory still exists
+            if os.path.exists(config["last_directory"]):
                 if text_to_speech_with_rate(input_text, file_path, rate, volume, voice_index):
-                    messagebox.showinfo("Success", f"Audio file saved successfully as {file_path}!")
+                    winsound.Beep(1000, 200)  # Play a short beep sound
             else:
                 messagebox.showerror("Error", f"Default directory does not exist: {config['last_directory']}. Please set a new default directory.")
-                config["last_directory"] = os.path.expanduser("~") #reset to home directory
+                config["last_directory"] = os.path.expanduser("~")
                 save_config(config)
                 directory_label.config(text=f"Default Directory: {config['last_directory']} (This is the default)")
-
-        else: # If no default directory is set, use the dialog
+        else:
             file_path = filedialog.asksaveasfilename(
-                defaultextension=".mp3", 
+                defaultextension=".mp3",
                 filetypes=[("MP3 Files", "*.mp3")],
-                initialdir=os.path.expanduser("~"), #default to home directory if no last directory
+                initialdir=os.path.expanduser("~"),
                 initialfile=filename_suggestion
             )
             if file_path:
                 config["last_directory"] = os.path.dirname(file_path)
                 save_config(config)
                 if text_to_speech_with_rate(input_text, file_path, rate, volume, voice_index):
-                    messagebox.showinfo("Success", f"Audio file saved successfully as {file_path}!")
+                    winsound.Beep(1000, 200)  # Play a short beep sound
 
     except ValueError as e:
         messagebox.showerror("Input Error", str(e))
@@ -105,13 +106,22 @@ def change_directory():
         save_config(config)
         directory_label.config(text=f"Default Directory: {config['last_directory']} (This is the default)")
 
+def on_closing():
+    config["rate"] = int(rate_entry.get())
+    config["volume"] = float(volume_entry.get())
+    config["voice_index"] = int(voice_index_entry.get())
+    config["input_text"] = input_text_area.get("1.0", tk.END).strip()
+    save_config(config)
+    window.destroy()
+
 window = tk.Tk()
 window.title("Text to Speech Converter")
+window.protocol("WM_DELETE_WINDOW", on_closing) #handle window close event
 
-# ... (rest of the GUI code is the same)
 input_label = tk.Label(window, text="Input Text:")
 input_label.pack(pady=(10, 0))
 input_text_area = scrolledtext.ScrolledText(window, wrap=tk.WORD, height=10)
+input_text_area.insert("1.0", config["input_text"]) #load saved text
 input_text_area.pack(padx=10, pady=(0, 10))
 
 input_frame = tk.Frame(window)
@@ -142,6 +152,9 @@ convert_button.pack(pady=(0, 5))
 directory_label = tk.Label(window, text=f"Default Directory: {config['last_directory']} (This is the default)")
 directory_label.pack()
 change_dir_button = tk.Button(window, text="Change Default Directory", command=change_directory)
-change_dir_button.pack(pady=(0, 10))
+change_dir_button.pack(pady=(0, 5))
+
+exit_button = tk.Button(window, text="Exit", command=on_closing)
+exit_button.pack(pady=(0,10))
 
 window.mainloop()
