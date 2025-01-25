@@ -4,7 +4,6 @@ import logging
 import pyttsx3
 import os
 import json
-import winsound  # For playing sounds (Windows only)
 
 # Configuration file
 CONFIG_FILE = "tts_config.json"
@@ -15,7 +14,7 @@ DEFAULT_CONFIG = {
     "volume": 1.0,
     "voice_index": 0,
     "last_directory": os.path.expanduser("~"),
-    "input_text": "" #save input text
+    "input_text": ""
 }
 
 def load_config():
@@ -75,7 +74,7 @@ def convert_button_clicked():
             file_path = os.path.join(config["last_directory"], filename_suggestion)
             if os.path.exists(config["last_directory"]):
                 if text_to_speech_with_rate(input_text, file_path, rate, volume, voice_index):
-                    winsound.Beep(1000, 200)  # Play a short beep sound
+                    status_label.config(text=f"Last saved: {file_path}", fg="darkgreen", font=("", 10, "bold"))
             else:
                 messagebox.showerror("Error", f"Default directory does not exist: {config['last_directory']}. Please set a new default directory.")
                 config["last_directory"] = os.path.expanduser("~")
@@ -92,7 +91,7 @@ def convert_button_clicked():
                 config["last_directory"] = os.path.dirname(file_path)
                 save_config(config)
                 if text_to_speech_with_rate(input_text, file_path, rate, volume, voice_index):
-                    winsound.Beep(1000, 200)  # Play a short beep sound
+                    status_label.config(text=f"Last saved: {file_path}", fg="darkgreen", font=("", 10, "bold"))
 
     except ValueError as e:
         messagebox.showerror("Input Error", str(e))
@@ -116,12 +115,14 @@ def on_closing():
 
 window = tk.Tk()
 window.title("Text to Speech Converter")
-window.protocol("WM_DELETE_WINDOW", on_closing) #handle window close event
+window.protocol("WM_DELETE_WINDOW", on_closing)
 
 input_label = tk.Label(window, text="Input Text:")
 input_label.pack(pady=(10, 0))
 input_text_area = scrolledtext.ScrolledText(window, wrap=tk.WORD, height=10)
-input_text_area.insert("1.0", config["input_text"]) #load saved text
+saved_text = config.get("input_text", "")
+if saved_text:
+    input_text_area.insert("1.0", saved_text)
 input_text_area.pack(padx=10, pady=(0, 10))
 
 input_frame = tk.Frame(window)
@@ -148,11 +149,15 @@ voice_index_entry.grid(row=0, column=5, padx=5, pady=5)
 convert_button = tk.Button(window, text="Convert", command=convert_button_clicked)
 convert_button.pack(pady=(0, 5))
 
+# Status Label
+status_label = tk.Label(window, text="", fg="darkgreen", font=("", 10, "bold"))
+status_label.pack()
+
 # Directory display and change button
 directory_label = tk.Label(window, text=f"Default Directory: {config['last_directory']} (This is the default)")
 directory_label.pack()
 change_dir_button = tk.Button(window, text="Change Default Directory", command=change_directory)
-change_dir_button.pack(pady=(0, 5))
+change_dir_button.pack(pady=(0, 10))
 
 exit_button = tk.Button(window, text="Exit", command=on_closing)
 exit_button.pack(pady=(0,10))

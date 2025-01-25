@@ -1,6 +1,7 @@
 {
-    "rate": 200,
-    "volume": 1.0,
-    "voice_index": 0,
-    "last_directory": "C:/Users/thevi/OneDrive/Audio/TTS"
+    "rate": 150,
+    "volume": 0.9,
+    "voice_index": 2,
+    "last_directory": "C:/Users/thevi/OneDrive/Audio/TTS",
+    "input_text": "testing 123 testing 345 testing testing testing"
 }
